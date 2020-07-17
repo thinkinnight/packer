@@ -193,7 +193,7 @@ func (p *PostProcessor) PostProcess(ctx context.Context, ui packer.Ui, artifact 
 
 func filterLog(s string, u *url.URL) string {
 	password, passwordSet := u.User.Password()
-	if passwordSet {
+	if passwordSet && password != "" {
 		return strings.Replace(s, password, "<password>", -1)
 	}
 
