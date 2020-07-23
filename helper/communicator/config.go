@@ -43,23 +43,16 @@ type Config struct {
 	Type string `mapstructure:"communicator"`
 
 	// We recommend that you enable SSH or WinRM as the very last step in your
-	// guest's bootstrap script, but sometimes you may have a race condition where
-	// you need Packer to wait before attempting to connect to your guest.
+	// guest's bootstrap script, but sometimes you may have a race condition
+	// where you need Packer to wait before attempting to connect to your
+	// guest.
 	//
 	// If you end up in this situation, you can use the template option
-	// `pause_before_connecting`. By default, there is no pause. For example:
-	//
-	// ```json
-	// {
-	//   "communicator": "ssh",
-	//   "ssh_username": "myuser",
-	//   "pause_before_connecting": "10m"
-	// }
-	// ```
-	//
-	// In this example, Packer will check whether it can connect, as normal. But once
-	// a connection attempt is successful, it will disconnect and then wait 10 minutes
-	// before connecting to the guest and beginning provisioning.
+	// `pause_before_connecting`. By default, there is no pause. For example if
+	// you set `pause_before_connecting` to `10m` Packer will check whether it
+	// can connect, as normal. But once a connection attempt is successful, it
+	// will disconnect and then wait 10 minutes before connecting to the guest
+	// and beginning provisioning.
 	PauseBeforeConnect time.Duration `mapstructure:"pause_before_connecting"`
 
 	SSH   `mapstructure:",squash"`
@@ -107,6 +100,12 @@ type SSH struct {
 	// (unless the user has set the `-debug` flag). Defaults to "false";
 	// currently only works on guests with `sed` installed.
 	SSHClearAuthorizedKeys bool `mapstructure:"ssh_clear_authorized_keys"`
+	// If set, Packer will override the value of key exchange (kex) altorighms
+	// supported by default by golang. Acceptable values include:
+	// "curve25519-sha256@libssh.org", "ecdh-sha2-nistp256",
+	// "ecdh-sha2-nistp384", "ecdh-sha2-nistp521",
+	// "diffie-hellman-group14-sha1", and "diffie-hellman-group1-sha1".
+	SSHKEXAlgos []string `mapstructure:"ssh_key_exchange_algorithms"`
 	// Path to a PEM encoded private key file to use to authenticate with SSH.
 	// The `~` can be used in path and will be expanded to the home directory
 	// of current user.
@@ -290,6 +289,10 @@ func (c *Config) SSHConfigFunc() func(multistep.StateBag) (*ssh.ClientConfig, er
 		}
 		if len(c.SSHCiphers) != 0 {
 			sshConfig.Config.Ciphers = c.SSHCiphers
+		}
+
+		if len(c.SSHKEXAlgos) != 0 {
+			sshConfig.Config.KeyExchanges = c.SSHKEXAlgos
 		}
 
 		if c.SSHAgentAuth {
